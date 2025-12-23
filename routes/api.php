@@ -6,6 +6,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\RfidScanController;
 use App\Http\Controllers\VisitorController;
 use App\Http\Controllers\Api\CheckinController;
+use App\Http\Controllers\FaceRecognitionController;
 
 /*
 |--------------------------------------------------------------------------
@@ -26,6 +27,27 @@ use App\Http\Controllers\Api\CheckinController;
  * 
  * Response format: JSON
  */
+
+// ============================================
+// FACE RECOGNITION API
+// ============================================
+Route::prefix('face')->name('api.face.')->group(function () {
+    // Verify face
+    Route::post('/verify', [FaceRecognitionController::class, 'verify'])
+        ->name('verify');
+    
+    // Enroll face
+    Route::post('/enroll', [FaceRecognitionController::class, 'enroll'])
+        ->name('enroll');
+    
+    // Delete face
+    Route::delete('/delete/{userId}', [FaceRecognitionController::class, 'delete'])
+        ->name('delete');
+    
+    // Get stats
+    Route::get('/stats', [FaceRecognitionController::class, 'stats'])
+        ->name('stats');
+});
 
 // ============================================
 // DASHBOARD API

@@ -52,6 +52,9 @@ class User extends Model
         'employee_id',
         'photo',
         'is_active',
+        'face_descriptor',
+        'face_registered_at',
+        'require_face_verification',
     ];
 
     /**
@@ -61,6 +64,8 @@ class User extends Model
      */
     protected $casts = [
         'is_active' => 'boolean',
+        'require_face_verification' => 'boolean',
+        'face_registered_at' => 'datetime',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
         'deleted_at' => 'datetime',
@@ -301,6 +306,54 @@ class User extends Model
             self::TYPE_GUEST => 'Tamu',
             self::TYPE_EMPLOYEE => 'Pegawai',
             self::TYPE_KADET => 'Kadet',
+            default => 'Unknown'
+        };
+    }
+
+    /**
+     * Check if user has face descriptor enrolled
+     *
+     * @return bool
+     */
+    public function hasFaceEnrolled(): bool
+    {
+        return !empty($this->face_descriptor);
+    }
+
+    /**
+     * Check if user requires face verification
+     *
+     * @return bool
+     */
+    public function requiresFaceVerification(): bool
+    {
+        return $this->require_face_verification && $this->hasFaceEnrolled();
+    }
+
+    /**
+     * Get face descriptor as array
+     *
+     * @return array|null
+     */
+    public function getFaceDescriptorArray(): ?array
+    {
+        if (empty($this->face_descriptor)) {
+            return null;
+        }
+        
+        return json_decode($this->face_descriptor, true);
+    }
+
+    /**
+     * Check if face descriptor is valid
+     *
+     * @return bool
+     */
+    public function hasFaceDescriptorValid(): bool
+    {
+        $descriptor = $this->getFaceDescriptorArray();
+        return is_array($descriptor) && count($descriptor) === 128;
+    }
             default => 'Unknown',
         };
     }
