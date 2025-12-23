@@ -227,6 +227,9 @@
     <!-- jQuery (optional, for easier AJAX) -->
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
     
+    <!-- Vite Assets -->
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    
     <!-- Common Scripts -->
     <script>
         // Update current time

@@ -346,6 +346,11 @@
             try {
                 showFaceStatus('Memulai kamera...', 'info');
                 
+                // Check if FaceRecognition is available
+                if (typeof FaceRecognition === 'undefined') {
+                    throw new Error('FaceRecognition module belum dimuat. Silakan refresh halaman.');
+                }
+                
                 // Initialize FaceRecognition
                 if (!faceRecognition) {
                     faceRecognition = new FaceRecognition();
