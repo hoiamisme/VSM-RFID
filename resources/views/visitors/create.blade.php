@@ -341,14 +341,6 @@
         let enrollmentStream = null;
         let capturedDescriptor = null;
 
-        // Import FaceRecognition class
-        import('/build/assets/app-CgUre33z.js').then(module => {
-            // Face recognition is available in global scope via app.js
-            console.log('Face recognition module loaded');
-        }).catch(err => {
-            console.error('Failed to load face recognition:', err);
-        });
-
         // Start camera
         $('#btn-start-camera').click(async function() {
             try {
@@ -452,15 +444,22 @@
         });
 
         function stopCamera() {
-            if (enrollmentStream) {
-                enrollmentStream.getTracks().forEach(track => track.stop());
-                enrollmentStream = null;
-            }
-
             const video = document.getElementById('enrollment-video');
-            if (video) {
+            
+            // Stop all tracks from video stream
+            if (video && video.srcObject) {
+                const stream = video.srcObject;
+                if (stream && stream.getTracks) {
+                    stream.getTracks().forEach(track => track.stop());
+                }
                 video.srcObject = null;
             }
+            
+            // Also stop enrollmentStream if it exists
+            if (enrollmentStream && enrollmentStream.getTracks) {
+                enrollmentStream.getTracks().forEach(track => track.stop());
+            }
+            enrollmentStream = null;
 
             $('#btn-start-camera').show();
             $('#btn-stop-camera').hide();

@@ -70,7 +70,7 @@ class FaceRecognition {
                 this.video.onloadedmetadata = () => {
                     this.video.play();
                     console.log('✓ Webcam started');
-                    resolve(true);
+                    resolve(this.stream);  // Return the stream object
                 };
             });
         } catch (error) {
