@@ -513,12 +513,21 @@
             $('#btn-verify-face').prop('disabled', true);
             
             // Detect face from video
-            const descriptor = await faceRecognition.detectFace(
+            const detection = await faceRecognition.detectFace(
                 document.getElementById('webcam-video')
             );
             
-            if (!descriptor) {
+            if (!detection || !detection.descriptor) {
                 updateFaceStatus('Wajah tidak terdeteksi. Silakan coba lagi.', 'warning');
+                $('#btn-verify-face').prop('disabled', false);
+                return;
+            }
+            
+            // Extract descriptor
+            const descriptor = detection.descriptor;
+            
+            if (descriptor.length !== 128) {
+                updateFaceStatus('Descriptor tidak valid. Silakan coba lagi.', 'warning');
                 $('#btn-verify-face').prop('disabled', false);
                 return;
             }

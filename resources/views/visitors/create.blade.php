@@ -391,10 +391,18 @@
                 showFaceStatus('Mendeteksi wajah...', 'info');
                 
                 const video = document.getElementById('enrollment-video');
-                const descriptor = await faceRecognition.detectFace(video);
+                const detection = await faceRecognition.detectFace(video);
 
-                if (!descriptor) {
+                if (!detection) {
                     showFaceStatus('Wajah tidak terdeteksi. Pastikan wajah terlihat jelas.', 'warning');
+                    return;
+                }
+
+                // Extract descriptor from detection
+                const descriptor = detection.descriptor;
+                
+                if (!descriptor || descriptor.length !== 128) {
+                    showFaceStatus('Descriptor wajah tidak valid. Silakan coba lagi.', 'warning');
                     return;
                 }
 
@@ -412,7 +420,7 @@
                     '<img src="' + imageData + '" style="max-width: 100%; max-height: 240px; border-radius: 8px;">'
                 );
 
-                // Store descriptor
+                // Store descriptor (convert Float32Array to regular array)
                 capturedDescriptor = Array.from(descriptor);
                 $('#face_descriptor').val(JSON.stringify(capturedDescriptor));
 
