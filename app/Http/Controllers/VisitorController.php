@@ -85,7 +85,7 @@ class VisitorController extends Controller
             'institution' => 'nullable|string|max:255',
             'employee_id' => 'nullable|string|max:50|unique:users,employee_id',
             'photo' => 'nullable|image|mimes:jpeg,jpg,png|max:2048', // Max 2MB
-            'rfid_uid' => 'nullable|string|max:255|unique:rfid_cards,uid',
+            'rfid_uid' => 'nullable|string|max:255',
             'rfid_card_number' => 'nullable|string|max:50',
             'face_descriptor' => 'nullable|string', // JSON array of 128 floats
             'require_face_verification' => 'nullable|boolean',
@@ -99,6 +99,19 @@ class VisitorController extends Controller
 
         try {
             DB::beginTransaction();
+            
+            // Check if RFID UID already exists (manual validation for better error message)
+            if ($request->filled('rfid_uid')) {
+                $existingRfid = RfidCard::where('uid', $request->rfid_uid)
+                    ->whereNull('deleted_at')
+                    ->first();
+                
+                if ($existingRfid) {
+                    return redirect()->back()
+                        ->withErrors(['rfid_uid' => 'UID RFID ini sudah terdaftar untuk user: ' . $existingRfid->user->name])
+                        ->withInput();
+                }
+            }
 
             // Handle photo upload
             $photoPath = null;
@@ -127,6 +140,12 @@ class VisitorController extends Controller
                     $userData['face_descriptor'] = $request->face_descriptor;
                     $userData['face_registered_at'] = now();
                     $userData['require_face_verification'] = $request->boolean('require_face_verification');
+                } else {
+                    // Invalid descriptor - log warning but don't fail
+                    \Log::warning('Invalid face descriptor during user creation', [
+                        'email' => $request->email,
+                        'descriptor_length' => is_array($descriptor) ? count($descriptor) : 'not_array'
+                    ]);
                 }
             }
 

@@ -176,14 +176,19 @@
                                        id="rfid_uid" 
                                        name="rfid_uid" 
                                        value="{{ old('rfid_uid') }}"
-                                       placeholder="Tap kartu pada reader...">
+                                       placeholder="Kosongkan jika belum punya kartu atau tap kartu pada reader...">
                                 <button class="btn btn-outline-secondary" type="button" id="scan-rfid-btn">
                                     <i class="bi bi-credit-card-2-front"></i> Scan
                                 </button>
+                                <button class="btn btn-outline-danger" type="button" id="clear-rfid-btn">
+                                    <i class="bi bi-x-circle"></i>
+                                </button>
                             </div>
-                            <small class="text-muted">Opsional: Bisa didaftarkan nanti</small>
+                            <small class="text-muted">
+                                <i class="bi bi-info-circle"></i> Opsional: Kosongkan jika user belum punya kartu RFID. Bisa didaftarkan nanti.
+                            </small>
                             @error('rfid_uid')
-                            <div class="invalid-feedback">{{ $message }}</div>
+                            <div class="invalid-feedback d-block">{{ $message }}</div>
                             @enderror
                         </div>
 
@@ -195,7 +200,8 @@
                                    id="rfid_card_number" 
                                    name="rfid_card_number" 
                                    value="{{ old('rfid_card_number') }}"
-                                   placeholder="Nomor yang tercetak di kartu">
+                                   placeholder="Kosongkan jika tidak ada">
+                            <small class="text-muted">Nomor yang tercetak di kartu (opsional)</small>
                             @error('rfid_card_number')
                             <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
@@ -326,6 +332,12 @@
         $('#scan-rfid-btn').click(function() {
             $('#rfid_uid').focus();
             alert('Tap kartu RFID pada reader. UID akan otomatis terisi.');
+        });
+        
+        // Clear RFID button
+        $('#clear-rfid-btn').click(function() {
+            $('#rfid_uid').val('');
+            $('#rfid_card_number').val('');
         });
 
         // Auto-focus RFID input on enter
