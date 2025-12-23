@@ -151,6 +151,8 @@ class RfidScanController extends Controller
                     'email' => $user->email,
                     'type' => $user->user_type_name,
                     'photo' => $user->photo_url,
+                    'has_face' => $user->hasFaceEnrolled(),
+                    'require_face_verification' => $user->requiresFaceVerification(),
                 ],
                 'location' => [
                     'id' => $location->id,
@@ -162,12 +164,13 @@ class RfidScanController extends Controller
                     'id' => $trackingLog->id,
                     'action_type' => $trackingLog->action_type,
                     'action_name' => $trackingLog->action_type_name,
-                    'status' => $trackingLog->status,
+                    'status' => $trackingLog::STATUS_ACCEPTED,
                     'status_name' => $trackingLog->status_name,
                     'scanned_at' => $trackingLog->scanned_at->format('Y-m-d H:i:s'),
                     'time_ago' => $trackingLog->time_ago,
                 ],
                 'message' => $this->getSuccessMessage($actionType, $user->name, $location->name),
+                'requires_face_verification' => $user->requiresFaceVerification(),
             ];
 
             return $this->successResponse($responseData, 'Scan berhasil');

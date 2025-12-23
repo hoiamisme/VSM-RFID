@@ -115,6 +115,90 @@
         </div>
     </div>
 
+    <!-- Face Recognition Statistics -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card h-100 border-primary">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="text-muted mb-1">
+                                <i class="bi bi-person-bounding-box"></i> Face Enrolled
+                            </h6>
+                            <h3 class="mb-0 text-primary">{{ $faceStats['total_enrolled'] }}</h3>
+                            <small class="text-muted">{{ $faceStats['enrollment_rate'] }}% dari total user</small>
+                        </div>
+                        <div>
+                            <div class="progress" style="width: 50px; height: 50px; border-radius: 50%;">
+                                <svg viewBox="0 0 36 36" class="circular-chart">
+                                    <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#e9ecef" stroke-width="3"/>
+                                    <path class="circle" stroke-dasharray="{{ $faceStats['enrollment_rate'] }}, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#0d6efd" stroke-width="3"/>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card h-100 border-success">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="text-muted mb-1">
+                                <i class="bi bi-shield-check"></i> Verified Today
+                            </h6>
+                            <h3 class="mb-0 text-success">{{ $faceStats['verified_today'] }}</h3>
+                            <small class="text-muted">{{ $faceStats['verification_success_rate'] }}% success rate</small>
+                        </div>
+                        <div class="stat-icon text-success">
+                            <i class="bi bi-check-circle-fill" style="font-size: 3rem; opacity: 0.3;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card h-100 border-info">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="text-muted mb-1">
+                                <i class="bi bi-gear"></i> Require Face Auth
+                            </h6>
+                            <h3 class="mb-0 text-info">{{ $faceStats['require_verification'] }}</h3>
+                            <small class="text-muted">User dengan face auth wajib</small>
+                        </div>
+                        <div class="stat-icon text-info">
+                            <i class="bi bi-lock-fill" style="font-size: 3rem; opacity: 0.3;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card h-100 border-warning">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="text-muted mb-1">
+                                <i class="bi bi-exclamation-triangle"></i> Failed Today
+                            </h6>
+                            <h3 class="mb-0 text-warning">{{ $faceStats['failed_today'] }}</h3>
+                            <small class="text-muted">Face verification gagal</small>
+                        </div>
+                        <div class="stat-icon text-warning">
+                            <i class="bi bi-x-circle-fill" style="font-size: 3rem; opacity: 0.3;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="row">
         <!-- Active Visitors -->
         <div class="col-lg-6 mb-4">

@@ -35,6 +35,9 @@ class DashboardController extends Controller
         // Get statistics
         $stats = $this->getStatistics($period);
 
+        // Get face recognition statistics
+        $faceStats = $this->getFaceStatistics();
+
         // Get active visitors (currently inside any location)
         $activeVisitors = $this->getActiveVisitors();
 
@@ -49,6 +52,7 @@ class DashboardController extends Controller
 
         return view('dashboard.index', compact(
             'stats',
+            'faceStats',
             'activeVisitors',
             'recentActivity',
             'locationOccupancy',
@@ -124,6 +128,71 @@ class DashboardController extends Controller
             'currently_inside' => $currentlyInside,
             'today_entries' => $todayEntries,
             'today_exits' => $todayExits,
+        ];
+    }
+
+    /**
+     * Get face recognition statistics
+     * 
+     * @return array
+     */
+    protected function getFaceStatistics(): array
+    {
+        // Total users
+        $totalUsers = User::active()->count();
+
+        // Users with face enrolled
+        $totalEnrolled = User::active()
+            ->whereNotNull('face_descriptor')
+            ->whereNotNull('face_registered_at')
+            ->count();
+
+        // Enrollment rate
+        $enrollmentRate = $totalUsers > 0 
+            ? round(($totalEnrolled / $totalUsers) * 100, 2) 
+            : 0;
+
+        // Users requiring face verification
+        $requireVerification = User::active()
+            ->where('require_face_verification', true)
+            ->count();
+
+        // Face verified today
+        $verifiedToday = TrackingLog::today()
+            ->where('face_verified', true)
+            ->where('verification_method', 'rfid+face')
+            ->count();
+
+        // Face verification failed today
+        $failedToday = TrackingLog::today()
+            ->where('face_verified', false)
+            ->whereNotNull('face_similarity')
+            ->count();
+
+        // Total face verifications today (success + failed)
+        $totalVerificationsToday = $verifiedToday + $failedToday;
+
+        // Verification success rate today
+        $verificationSuccessRate = $totalVerificationsToday > 0 
+            ? round(($verifiedToday / $totalVerificationsToday) * 100, 2) 
+            : 0;
+
+        // Average similarity for successful verifications
+        $avgSimilarity = TrackingLog::today()
+            ->where('face_verified', true)
+            ->whereNotNull('face_similarity')
+            ->avg('face_similarity');
+
+        $avgSimilarity = $avgSimilarity ? round($avgSimilarity * 100, 2) : 0;
+
+        return [
+            'total_enrolled' => $totalEnrolled,
+            'enrollment_rate' => $enrollmentRate,
+            'require_verification' => $requireVerification,
+            'verified_today' => $verifiedToday,
+            'failed_today' => $failedToday,
+            'verification_success_rate' => $verificationSuccessRate,
+            'avg_similarity' => $avgSimilarity,
         ];
     }
 

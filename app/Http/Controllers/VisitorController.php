@@ -87,6 +87,8 @@ class VisitorController extends Controller
             'photo' => 'nullable|image|mimes:jpeg,jpg,png|max:2048', // Max 2MB
             'rfid_uid' => 'nullable|string|max:255|unique:rfid_cards,uid',
             'rfid_card_number' => 'nullable|string|max:50',
+            'face_descriptor' => 'nullable|string', // JSON array of 128 floats
+            'require_face_verification' => 'nullable|boolean',
         ]);
 
         if ($validator->fails()) {
@@ -104,8 +106,8 @@ class VisitorController extends Controller
                 $photoPath = $request->file('photo')->store('photos', 'public');
             }
 
-            // Create user
-            $user = User::create([
+            // Prepare user data
+            $userData = [
                 'name' => $request->name,
                 'email' => $request->email,
                 'phone' => $request->phone,
@@ -115,7 +117,21 @@ class VisitorController extends Controller
                 'employee_id' => $request->employee_id,
                 'photo' => $photoPath,
                 'is_active' => true,
-            ]);
+            ];
+
+            // Add face recognition data if provided
+            if ($request->filled('face_descriptor')) {
+                // Validate descriptor format
+                $descriptor = json_decode($request->face_descriptor, true);
+                if (is_array($descriptor) && count($descriptor) === 128) {
+                    $userData['face_descriptor'] = $request->face_descriptor;
+                    $userData['face_registered_at'] = now();
+                    $userData['require_face_verification'] = $request->boolean('require_face_verification');
+                }
+            }
+
+            // Create user
+            $user = User::create($userData);
 
             // Create RFID card if UID provided
             if ($request->filled('rfid_uid')) {

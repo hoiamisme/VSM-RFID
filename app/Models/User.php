@@ -354,7 +354,4 @@ class User extends Model
         $descriptor = $this->getFaceDescriptorArray();
         return is_array($descriptor) && count($descriptor) === 128;
     }
-            default => 'Unknown',
-        };
-    }
 }

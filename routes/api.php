@@ -7,6 +7,7 @@ use App\Http\Controllers\RfidScanController;
 use App\Http\Controllers\VisitorController;
 use App\Http\Controllers\Api\CheckinController;
 use App\Http\Controllers\FaceRecognitionController;
+use App\Http\Controllers\TrackingLogController;
 
 /*
 |--------------------------------------------------------------------------
@@ -47,6 +48,15 @@ Route::prefix('face')->name('api.face.')->group(function () {
     // Get stats
     Route::get('/stats', [FaceRecognitionController::class, 'stats'])
         ->name('stats');
+});
+
+// ============================================
+// TRACKING LOG API
+// ============================================
+Route::prefix('tracking-logs')->name('api.tracking-logs.')->group(function () {
+    // Update face verification status
+    Route::put('/{id}/face-status', [TrackingLogController::class, 'updateFaceStatus'])
+        ->name('update-face-status');
 });
 
 // ============================================

@@ -207,6 +207,65 @@
             </div>
         </div>
     </div>
+
+    <!-- Face Verification Modal -->
+    <div class="modal fade" id="faceVerificationModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-camera-video-fill"></i> Verifikasi Wajah
+                    </h5>
+                </div>
+                <div class="modal-body text-center">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Wajah Terdaftar</h6>
+                            <img id="face-registered-photo" src="" alt="Registered" class="img-fluid rounded" style="max-height: 300px;">
+                            <p class="mt-2" id="face-user-name"></p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Webcam Live</h6>
+                            <div style="position: relative; display: inline-block;">
+                                <video id="face-video" width="320" height="240" autoplay muted style="border-radius: 10px; border: 3px solid #0d6efd;"></video>
+                                <canvas id="face-overlay" width="320" height="240" style="position: absolute; top: 0; left: 0;"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <h6>Tingkat Kemiripan</h6>
+                        <div class="progress" style="height: 30px;">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                                 id="similarity-bar" 
+                                 role="progressbar" 
+                                 style="width: 0%">
+                                <span id="similarity-text">0%</span>
+                            </div>
+                        </div>
+                        <small class="text-muted mt-2 d-block">Minimal 60% untuk verifikasi berhasil</small>
+                    </div>
+                    
+                    <div class="mt-3" id="face-status-message"></div>
+                    
+                    <div class="mt-3" id="face-loading" style="display: none;">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2">Memuat model face recognition...</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="cancelFaceVerification()">
+                        <i class="bi bi-x-circle"></i> Batal
+                    </button>
+                    <button type="button" class="btn btn-primary" id="verify-face-btn" onclick="startFaceVerification()" disabled>
+                        <i class="bi bi-check-circle"></i> Verifikasi
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 @endsection
 
@@ -306,7 +365,19 @@
             },
             success: function(response) {
                 console.log('Scan berhasil:', response);
-                showSuccessResult(response);
+                
+                // Check if face verification required
+                if (response.data.requires_face_verification) {
+                    // Store data for face verification
+                    window.currentScanData = response.data;
+                    window.currentTrackingLogId = response.data.tracking.id;
+                    
+                    // Show face verification modal
+                    showFaceVerificationModal(response.data);
+                } else {
+                    // Normal flow without face verification
+                    showSuccessResult(response);
+                }
             },
             error: function(xhr) {
                 console.error('Scan gagal:', xhr);
@@ -367,6 +438,231 @@
         // const audio = new Audio(type === 'success' ? '/sounds/success.mp3' : '/sounds/error.mp3');
         // audio.play();
     }
+
+    // Face Verification Functions
+    let faceRecognition = null;
+    let verificationStream = null;
+
+    function showFaceVerificationModal(scanData) {
+        // Set user info in modal
+        $('#face-modal-name').text(scanData.user.name);
+        $('#face-modal-type').text(scanData.user.type);
+        
+        // Set registered photo
+        if (scanData.user.photo) {
+            $('#registered-face').attr('src', scanData.user.photo);
+        }
+        
+        // Show modal
+        $('#faceVerificationModal').modal('show');
+        
+        // Initialize face recognition after modal shown
+        $('#faceVerificationModal').on('shown.bs.modal', function() {
+            startFaceVerification();
+        });
+        
+        // Cleanup on modal close
+        $('#faceVerificationModal').on('hidden.bs.modal', function() {
+            stopFaceVerification();
+        });
+    }
+
+    async function startFaceVerification() {
+        try {
+            updateFaceStatus('Memulai webcam...', 'info');
+            
+            // Initialize FaceRecognition instance
+            if (!faceRecognition) {
+                faceRecognition = new FaceRecognition();
+            }
+            
+            // Load models
+            updateFaceStatus('Memuat model AI...', 'info');
+            await faceRecognition.loadModels();
+            
+            // Start webcam
+            updateFaceStatus('Mengaktifkan kamera...', 'info');
+            verificationStream = await faceRecognition.startWebcam(
+                document.getElementById('webcam-video')
+            );
+            
+            updateFaceStatus('Posisikan wajah Anda di depan kamera', 'success');
+            
+            // Enable verify button
+            $('#btn-verify-face').prop('disabled', false);
+            
+        } catch (error) {
+            console.error('Error starting face verification:', error);
+            updateFaceStatus('Gagal memulai verifikasi: ' + error.message, 'danger');
+            
+            // Auto close modal after error
+            setTimeout(() => {
+                $('#faceVerificationModal').modal('hide');
+                showErrorResult({
+                    responseJSON: {
+                        message: 'Verifikasi wajah gagal: ' + error.message
+                    }
+                });
+            }, 3000);
+        }
+    }
+
+    async function performFaceVerification() {
+        try {
+            updateFaceStatus('Mendeteksi wajah...', 'info');
+            $('#btn-verify-face').prop('disabled', true);
+            
+            // Detect face from video
+            const descriptor = await faceRecognition.detectFace(
+                document.getElementById('webcam-video')
+            );
+            
+            if (!descriptor) {
+                updateFaceStatus('Wajah tidak terdeteksi. Silakan coba lagi.', 'warning');
+                $('#btn-verify-face').prop('disabled', false);
+                return;
+            }
+            
+            updateFaceStatus('Memverifikasi wajah...', 'info');
+            
+            // Send to server for verification
+            const response = await $.ajax({
+                url: '/api/face/verify',
+                method: 'POST',
+                contentType: 'application/json',
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                data: JSON.stringify({
+                    user_id: window.currentScanData.user.id,
+                    descriptor: Array.from(descriptor)
+                })
+            });
+            
+            // Update similarity bar
+            const similarity = response.similarity * 100;
+            updateSimilarityBar(similarity);
+            
+            if (response.verified) {
+                updateFaceStatus('Verifikasi berhasil! (' + similarity.toFixed(1) + '% cocok)', 'success');
+                
+                // Wait 2 seconds then close modal and show success
+                setTimeout(() => {
+                    $('#faceVerificationModal').modal('hide');
+                    
+                    // Update tracking log with face verification
+                    updateTrackingLogFaceStatus(true, response.similarity);
+                    
+                    // Show success result
+                    showSuccessResult({
+                        message: 'RFID dan wajah terverifikasi',
+                        data: window.currentScanData
+                    });
+                }, 2000);
+                
+            } else {
+                updateFaceStatus('Verifikasi gagal! Wajah tidak cocok (' + similarity.toFixed(1) + '%)', 'danger');
+                
+                // Update tracking log with failed verification
+                updateTrackingLogFaceStatus(false, response.similarity);
+                
+                // Wait then show error
+                setTimeout(() => {
+                    $('#faceVerificationModal').modal('hide');
+                    showErrorResult({
+                        responseJSON: {
+                            message: 'Verifikasi wajah gagal. Wajah tidak cocok dengan data terdaftar.'
+                        }
+                    });
+                }, 3000);
+            }
+            
+        } catch (error) {
+            console.error('Verification error:', error);
+            updateFaceStatus('Error: ' + (error.responseJSON?.message || error.message), 'danger');
+            $('#btn-verify-face').prop('disabled', false);
+        }
+    }
+
+    function updateSimilarityBar(percentage) {
+        const $bar = $('#similarity-bar');
+        $bar.css('width', percentage + '%');
+        $bar.attr('aria-valuenow', percentage);
+        $bar.text(percentage.toFixed(1) + '%');
+        
+        // Update color based on threshold
+        $bar.removeClass('bg-success bg-warning bg-danger');
+        if (percentage >= 60) {
+            $bar.addClass('bg-success');
+        } else if (percentage >= 40) {
+            $bar.addClass('bg-warning');
+        } else {
+            $bar.addClass('bg-danger');
+        }
+    }
+
+    function updateFaceStatus(message, type) {
+        const $status = $('#face-status');
+        $status.removeClass('alert-info alert-success alert-warning alert-danger');
+        $status.addClass('alert-' + type);
+        $status.text(message);
+    }
+
+    async function updateTrackingLogFaceStatus(verified, similarity) {
+        try {
+            await $.ajax({
+                url: '/api/tracking-logs/' + window.currentTrackingLogId + '/face-status',
+                method: 'PUT',
+                contentType: 'application/json',
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                data: JSON.stringify({
+                    face_verified: verified,
+                    face_similarity: similarity,
+                    verification_method: verified ? 'rfid+face' : 'rfid_only'
+                })
+            });
+        } catch (error) {
+            console.error('Failed to update tracking log:', error);
+        }
+    }
+
+    function stopFaceVerification() {
+        // Stop webcam
+        if (verificationStream) {
+            verificationStream.getTracks().forEach(track => track.stop());
+            verificationStream = null;
+        }
+        
+        // Reset video element
+        const video = document.getElementById('webcam-video');
+        if (video) {
+            video.srcObject = null;
+        }
+        
+        // Reset UI
+        updateSimilarityBar(0);
+        updateFaceStatus('', 'info');
+        $('#btn-verify-face').prop('disabled', true);
+        
+        // Clear stored data
+        window.currentScanData = null;
+        window.currentTrackingLogId = null;
+    }
+
+    // Button event handlers
+    $('#btn-verify-face').on('click', performFaceVerification);
+    
+    $('#btn-cancel-face').on('click', function() {
+        $('#faceVerificationModal').modal('hide');
+        showErrorResult({
+            responseJSON: {
+                message: 'Verifikasi wajah dibatalkan'
+            }
+        });
+    });
+
 
     // Keyboard shortcut: Esc untuk reset
     $(document).keyup(function(e) {

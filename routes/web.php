@@ -36,6 +36,13 @@ Route::get('/', function () {
 });
 
 // ============================================
+// FACE RECOGNITION TEST PAGE (Development Only)
+// ============================================
+Route::get('/face-test', function () {
+    return view('face-recognition-test');
+})->name('face.test');
+
+// ============================================
 // DASHBOARD
 // ============================================
 Route::prefix('dashboard')->name('dashboard.')->group(function () {
